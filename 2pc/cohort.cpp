@@ -11,19 +11,19 @@ enum StateCohort {
 };
 
 Cohort::Cohort() {
-    seqno_ = Cohort::GenerateSeqno();
     state_ = kStateCohortStart;
     vote_result_ = kVoteReusultInvalid;
 }
 
-void Cohort::RecvVoteRequest(uint64_t from_seqno, void* data, size_t data_len) {
+bool Cohort::RecvVoteRequest(uint64_t from_seqno, void* data, size_t data_len) {
     if (state_ == kStateCohortStart) {
         from_seqno_ = from_seqno;
         auto result = OnBusinessVoteRequest(data, data_len);
         vote_result_ = result;
         state_ = kStateCohortVote;
         SendVoteResult(from_seqno, result);
-        //todo 启用定时器
+        //启用定时器
+        SetTimer();
     } else if (state_ == kStateCohortVote) {
         //对方重发了vote request
         if (from_seqno_ != from_seqno) {
@@ -33,13 +33,14 @@ void Cohort::RecvVoteRequest(uint64_t from_seqno, void* data, size_t data_len) {
          SendVoteResult(from_seqno, vote_result_);
     } else {
         //
-        printf("Err: cohort %d receive vote request from %d when in state %d\n", seqno_, from_seqno, state_);
+        printf("Err: cohort %p receive vote request from %d when in state %d\n", this, from_seqno, state_);
     }
+    return false;
 }
 
 void Cohort::RecvCommit(uint64_t from_seqno, int cmd, void* data, size_t data_len) {
     if (state_ == kStateCohortStart) {
-        printf("Err: cohort %d receive commit request from %d when in state %d\n", seqno_, from_seqno, state_);
+        printf("Err: cohort %p receive commit request from %d when in state %d\n", this, from_seqno, state_);
         return;
     } else if (state_ == kStateCohortVote) {
         if (cmd == kCmdGlobalCommit) {
@@ -57,17 +58,11 @@ void Cohort::RecvCommit(uint64_t from_seqno, int cmd, void* data, size_t data_le
 
 void Cohort::Timeout(void* data, size_t data_len) {
     if (state_ == kStateCohortVote) {
-        //没有等到 commit 通知
-    } else {
-
+        //没有等到 commit 通知, 直接放弃 (TODO 优化)
+        OnBusinessAbort(data, data_len);
+        state_ = kStateCohortCommit;
+        SendAck(from_seqno_);
     }
-}
-
-uint64_t Cohort::GenerateSeqno() {
-    static uint64_t base_seq = 0;
-    ++base_seq;
-    base_seq = (base_seq == 0) ? 1 : base_seq;
-    return base_seq;
 }
 
 } //namespace kit
