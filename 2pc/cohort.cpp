@@ -1,6 +1,7 @@
 #include "cohort.h"
 #include "def.h"
 #include <stdio.h>
+#include <cinttypes>
 
 namespace kit {
 
@@ -33,14 +34,16 @@ bool Cohort::RecvVoteRequest(uint64_t from_seqno, void* data, size_t data_len) {
          SendVoteResult(from_seqno, vote_result_);
     } else {
         //
-        printf("Err: cohort %p receive vote request from %d when in state %d\n", this, from_seqno, state_);
+        printf("Err: cohort %p receive vote request from %" PRIu64 " when in state %d\n", 
+               this, from_seqno, state_);
     }
     return false;
 }
 
 void Cohort::RecvCommit(uint64_t from_seqno, int cmd, void* data, size_t data_len) {
     if (state_ == kStateCohortStart) {
-        printf("Err: cohort %p receive commit request from %d when in state %d\n", this, from_seqno, state_);
+        printf("Err: cohort %p receive commit request from %" PRIu64 " when in state %d\n", 
+               this, from_seqno, state_);
         return;
     } else if (state_ == kStateCohortVote) {
         if (cmd == kCmdGlobalCommit) {

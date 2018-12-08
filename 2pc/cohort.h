@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <cstddef>
+#include "def.h"
 
 namespace kit {
 

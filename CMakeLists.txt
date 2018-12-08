@@ -36,6 +36,10 @@ target_sources(kit
     "${PROJECT_SOURCE_DIR}/errcode.h"
     "${PROJECT_SOURCE_DIR}/fsm/fsm_prototype.cpp"
     "${PROJECT_SOURCE_DIR}/fsm/fsm_prototype.h"
+    "${PROJECT_SOURCE_DIR}/2pc/coordinator.cpp"
+    "${PROJECT_SOURCE_DIR}/2pc/coordinator.h"
+    "${PROJECT_SOURCE_DIR}/2pc/cohort.cpp"
+    "${PROJECT_SOURCE_DIR}/2pc/cohort.h"
 )
 
 add_executable(kitexample
