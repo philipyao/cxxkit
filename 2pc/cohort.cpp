@@ -13,10 +13,13 @@ enum StateCohort {
 
 Cohort::Cohort() {
     state_ = kStateCohortStart;
+    from_seqno_ = 0;
     vote_result_ = kVoteReusultInvalid;
+    timer_ = 0;
 }
 
-bool Cohort::RecvVoteRequest(uint64_t from_seqno, void* data, size_t data_len) {
+void Cohort::RecvVoteRequest(uint64_t from_seqno, void* data, size_t data_len) {
+    printf("cohort[%p] RecvVoteRequest: from_seqno %" PRIu64 ", state %d\n", from_seqno, state_);
     if (state_ == kStateCohortStart) {
         from_seqno_ = from_seqno;
         auto result = OnBusinessVoteRequest(data, data_len);
@@ -24,8 +27,10 @@ bool Cohort::RecvVoteRequest(uint64_t from_seqno, void* data, size_t data_len) {
         state_ = kStateCohortVote;
         SendVoteResult(from_seqno, result);
         //启用定时器
-        SetTimer();
+        timer_ = SetTimer(&from_seqno, sizeof(from_seqno));
+        printf("process done, set timer %d\n", timer_);
     } else if (state_ == kStateCohortVote) {
+        printf("recv retransmit\n");
         //对方重发了vote request
         if (from_seqno_ != from_seqno) {
             //todo
@@ -37,15 +42,21 @@ bool Cohort::RecvVoteRequest(uint64_t from_seqno, void* data, size_t data_len) {
         printf("Err: cohort %p receive vote request from %" PRIu64 " when in state %d\n", 
                this, from_seqno, state_);
     }
-    return false;
+    return ;
 }
 
 void Cohort::RecvCommit(uint64_t from_seqno, int cmd, void* data, size_t data_len) {
+    printf("cohort[%p] RecvCommit: from_seqno %" PRIu64 ", state %d\n", from_seqno, state_);
     if (state_ == kStateCohortStart) {
         printf("Err: cohort %p receive commit request from %" PRIu64 " when in state %d\n", 
                this, from_seqno, state_);
         return;
     } else if (state_ == kStateCohortVote) {
+        //删除超时定时器
+        if (timer_ != 0) {
+            DelTimer(timer_);
+            timer_ = 0;
+        }
         if (cmd == kCmdGlobalCommit) {
             OnBusinessCommit(data, data_len);
         } else {
@@ -60,7 +71,9 @@ void Cohort::RecvCommit(uint64_t from_seqno, int cmd, void* data, size_t data_le
 }
 
 void Cohort::Timeout(void* data, size_t data_len) {
+    printf("cohort[%p] Timeout: data %p, len %zd, state %d\n", this, data, data_len, state_);
     if (state_ == kStateCohortVote) {
+        printf("just abort\n");
         //没有等到 commit 通知, 直接放弃 (TODO 优化)
         OnBusinessAbort(data, data_len);
         state_ = kStateCohortCommit;

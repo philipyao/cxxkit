@@ -28,7 +28,7 @@ public:
     void Timeout(void* data, size_t data_len);
 
     //======= 以下回调接口需要上层业务实现  ===========
-    virtual void SendVoteRequest(int seqno) = 0;
+    virtual void SendVoteRequest(uint64_t seqno) = 0;
     virtual int SetTimer() = 0;
     virtual void DelTimer(int tmr) = 0;
     virtual void SendCommit(int seqno, int cmd) = 0;
