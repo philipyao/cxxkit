@@ -14,6 +14,8 @@ enum CmdType {
     kCmdGlobalAbort,
 };
 
+#define GENSTR(str) #str
+
 }
 
 #endif //__2PC_DEF_H__

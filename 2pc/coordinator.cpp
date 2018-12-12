@@ -11,6 +11,19 @@ enum StateType {
     kStateTypeCommitted,
 };
 
+static const char* GenStateStrV2(int st) {
+    switch (st) {
+    case kStateTypeStart:
+        return GENSTR(kStateTypeStart);
+    case kStateTypePrepared:
+        return GENSTR(kStateTypePrepared);
+    case kStateTypeCommitted:
+        return GENSTR(kStateTypeCommitted);
+    default:
+        return "unknown";             
+    }
+}
+
 Coordinator::Coordinator() {
     state_ = kStateTypeStart;
     seqno_ = Coordinator::GenerateSeqno();
@@ -29,7 +42,7 @@ void Coordinator::Start() {
 }
 
 void Coordinator::RecvVoteReply(VoteResult result) {
-    printf("Coordinator[%p] RecvVoteReply: result %d, state %d\n", this, result, state_);
+    printf("Coordinator[%p] RecvVoteReply: result %d, state %s\n", this, result, GenStateStrV2(state_));
 
     if (state_ == kStateTypePrepared) {
         //删除定时器
@@ -43,29 +56,29 @@ void Coordinator::RecvVoteReply(VoteResult result) {
         }
         
         SendCommitCmd(commit_cmd_);
+        state_ = kStateTypeCommitted;
     }
 }
 
 void Coordinator::RecvAck() {
-    printf("Coordinator[%p] RecvAck, state %d\n", this, state_);
+    printf("Coordinator[%p] RecvAck, state %s\n", this, GenStateStrV2(state_));
     
     if (state_ == kStateTypeCommitted) {
         //删除定时器
         TryDelTimer();
-        SendCommitCmd(commit_cmd_);
+
+        //TODO 释放资源
+
+        //结束2PC事务, 回调上层
+        OnFinished();
     }
-
-    //TODO 释放资源
-
-    //结束2PC事务, 回调上层
-    OnFinished();
 
     return;
 }
 
 void Coordinator::Timeout(void* data, size_t data_len) {
     timer_ = 0;
-    printf("coordinator[%p] Timeout, state %d\n", this, state_);
+    printf("coordinator[%p] Timeout, state %s\n", this, GenStateStrV2(state_));
     if (state_ == kStateTypePrepared) {
         printf("coordinator[%p] start to abort\n", this);
         commit_cmd_ = kVoteResultAbort;
