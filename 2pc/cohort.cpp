@@ -19,7 +19,7 @@ Cohort::Cohort() {
 }
 
 void Cohort::RecvVoteRequest(uint64_t from_seqno, void* data, size_t data_len) {
-    printf("cohort[%p] RecvVoteRequest: from_seqno %" PRIu64 ", state %d\n", from_seqno, state_);
+    printf("cohort[%p] RecvVoteRequest: from_seqno %" PRIu64 ", state %d\n", this, from_seqno, state_);
     if (state_ == kStateCohortStart) {
         from_seqno_ = from_seqno;
         auto result = OnBusinessVoteRequest(data, data_len);
@@ -46,7 +46,7 @@ void Cohort::RecvVoteRequest(uint64_t from_seqno, void* data, size_t data_len) {
 }
 
 void Cohort::RecvCommit(uint64_t from_seqno, int cmd, void* data, size_t data_len) {
-    printf("cohort[%p] RecvCommit: from_seqno %" PRIu64 ", state %d\n", from_seqno, state_);
+    printf("cohort[%p] RecvCommit: from_seqno %" PRIu64 ", state %d\n", this, from_seqno, state_);
     if (state_ == kStateCohortStart) {
         printf("Err: cohort %p receive commit request from %" PRIu64 " when in state %d\n", 
                this, from_seqno, state_);

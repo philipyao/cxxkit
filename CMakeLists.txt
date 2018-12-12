@@ -42,10 +42,15 @@ target_sources(kit
     "${PROJECT_SOURCE_DIR}/2pc/cohort.h"
 )
 
-add_executable(kitexample
+add_executable(kitexamplefsm
   "${PROJECT_SOURCE_DIR}/example/use_fsm.cpp"
 )
-target_link_libraries(kitexample kit)
+target_link_libraries(kitexamplefsm kit)
+
+add_executable(kitexample2pc
+  "${PROJECT_SOURCE_DIR}/example/use_2pc.cpp"
+)
+target_link_libraries(kitexample2pc kit)
 
 # install (TARGETS kit DESTINATION bin)
 # install (FILES ${PROJECT_SOURCE_DIR}/fsm/fsm_prototype.h errcode.h DESTINATION include)
